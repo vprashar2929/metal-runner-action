@@ -1,0 +1,62 @@
+name: metal-github-runner
+description: "Provision an Equinix Metal Server and set up a github self-hosted runner on it"
+inputs:
+  github_token:
+    description: "Github Token with repo scope"
+    required: true
+  metal_auth_token:
+    description: "Equinix Metal API Token"
+    required: true
+  metal_project_id:
+    description: "Equinix Metal Project ID"
+    required: true
+  metro:
+    description: "Equinix Metal Metro for Github self-hosted runner"
+    required: true
+  plan:
+    description: "Equinix Metal Plan for Github self-hosted runner"
+    required: true
+  os:
+    description: "Equinix Metal OS for Github self-hosted runner"
+    default: "ubuntu_22_04"
+  provisioning_timeout:
+    description: "Equinix Metal Provisioning Timeout for Github self-hosted runner"
+    default: "30"
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        echo "registration-token=$(
+        curl -fsSL \
+        -X POST \
+        -H 'accept: application/vnd.github+json' \
+        -H 'authorization: Bearer ${{ inputs.github_token }}' \
+        -H 'X-GitHub-Api-Version: 2022-11-28' \
+        --url https://api.github.com/repos/${{ github.repository }}/actions/runners/registration-token | jq .token)" >> $GITHUB_OUTPUT
+      shell: bash
+      id: get-registration-token
+    - name: Create Device
+      uses: equinix-labs/metal-device-action@main
+      with:
+        metal_auth_token: ${{ inputs.metal_auth_token }}
+        metal_project_id: ${{ inputs.metal_project_id }}
+        metro: ${{ inputs.metro }}
+        plan: ${{ inputs.plan }}
+        os: ${{ inputs.os }}
+        provisioning_timeout: ${{ inputs.provisioning_timeout }}
+        user_data: |
+          #!/bin/bash
+          export DEBIAN_FRONTEND=noninteractive 
+          apt-get -qy update
+          apt-get -qy install build-essential gcc jq
+          useradd -m ghrunner -s /bin/bash
+          cd /home/ghrunner
+          mkdir runner
+          VERSION=$(curl -fsSL https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | sed 's/^v//')
+          curl -o actions-runner-linux-x64-${VERSION}.tar.gz -fsSL https://github.com/actions/runner/releases/download/v${VERSION}/actions-runner-linux-x64-${VERSION}.tar.gz
+          tar xzf ./actions-runner-linux-x64-${VERSION}.tar.gz -C runner
+          chown -R ghrunner ./runner
+          cd runner
+          sudo -E -u ghrunner ./config.sh --unattended --url https://github.com/${{ github.repository }} --token ${{ steps.get-registration-token.outputs.registration-token }} --name $(hostname) --work /home/ghrunner --labels ${{ github.repository }} --ephemeral
+          ./svc.sh install
+          ./svc.sh start
