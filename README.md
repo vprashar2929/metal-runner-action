@@ -1,6 +1,6 @@
 # metal-runner-action
 
-[![GitHub Super-Linter](https://github.com/equinix-labs/metal-action-runner/actions/workflows/linter.yaml/badge.svg)](https://github.com/marketplace/actions/super-linter)
+[![GitHub Super-Linter](https://github.com/equinix-labs/metal-action-runner/actions/workflows/superlinter.yaml/badge.svg)](https://github.com/marketplace/actions/super-linter)
 
 This Experimental GitHub Action sets up an Equinix Metal server that can be used to run code in your workflows.
 
