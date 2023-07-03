@@ -56,7 +56,7 @@ jobs:
 
     steps:
       - name: metal-runner-action
-        uses: equinix-labs/meta-action-runner@v0.1.0
+        uses: equinix-labs/metal-action-runner@v0.1.0
         with:
           github_token: ${{ secrets.TEST_PAT_KEY }}
           metal_auth_token: ${{ secrets.METAL_AUTH_TOKEN }}
