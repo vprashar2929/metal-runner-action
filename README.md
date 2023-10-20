@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: metal-project-action
         id: metal-project-action
-        uses: equinix-labs/metal-project-action@v0.12.1
+        uses: equinix-labs/metal-project-action@v0.14.0
         with:
           projectName: "metal-runner-demo"
           userToken: ${{ secrets.METAL_AUTH_TOKEN }}
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: metal-runner-action
-        uses: equinix-labs/metal-action-runner@v0.1.0
+        uses: equinix-labs/metal-action-runner@v0.1.1
         with:
           github_token: ${{ secrets.TEST_PAT_KEY }}
           metal_auth_token: ${{ secrets.METAL_AUTH_TOKEN }}
@@ -85,7 +85,7 @@ jobs:
 
     steps:
       - name: metal-sweeper-action
-        uses: equinix-labs/metal-sweeper-action@v0.5.1
+        uses: equinix-labs/metal-sweeper-action@v0.6.0
         with:
           authToken: ${{ secrets.METAL_AUTH_TOKEN }}
           projectID: ${{ needs.Project.outputs.projectID  }}
