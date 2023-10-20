@@ -1,4 +1,7 @@
 name: metal-github-runner
+branding:
+  icon: 'rotate-cw'
+  color: 'green'
 description: "Provision an Equinix Metal Server and set up a github self-hosted runner on it"
 inputs:
   github_token:
