@@ -49,9 +49,13 @@ runs:
         provisioning_timeout: ${{ inputs.provisioning_timeout }}
         user_data: |
           #!/bin/bash
-          export DEBIAN_FRONTEND=noninteractive 
-          apt-get -qy update
-          apt-get -qy install build-essential gcc jq
+          if command -v yum &> /dev/null; then
+            yum install -y curl jq libicu gcc
+          else
+            export DEBIAN_FRONTEND=noninteractive 
+            apt-get -qy update
+            apt-get -qy install build-essential gcc jq
+          fi
           useradd -m ghrunner -s /bin/bash
           cd /home/ghrunner
           mkdir runner
