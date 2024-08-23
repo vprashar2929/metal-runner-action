@@ -25,19 +25,33 @@ inputs:
   provisioning_timeout:
     description: "Equinix Metal Provisioning Timeout for Github self-hosted runner"
     default: "30"
+  repository_level:
+    description: "Set to true to enable repository level registration token"
+    default: "false"
 runs:
   using: "composite"
   steps:
     - run: |
-        echo "registration-token=$(
-        curl -fsSL \
+        # Determine the level and runner scope based on inputs
+        if  [[ "${{ inputs.repository_level }}" == "true" ]] || [[ -z "${{ github.organization }}" ]]; then
+          level="repos"
+          runner_scope="${{ github.repository }}"
+        else
+          level="orgs"
+          runner_scope="${{ github.organization }}"
+        fi
+        # Get the registration token
+        registration_token=$(curl -fsSL \
         -X POST \
         -H 'accept: application/vnd.github+json' \
         -H 'authorization: Bearer ${{ inputs.github_token }}' \
         -H 'X-GitHub-Api-Version: 2022-11-28' \
-        --url https://api.github.com/repos/${{ github.repository }}/actions/runners/registration-token | jq .token)" >> $GITHUB_OUTPUT
+        --url "https://api.github.com/$level/$runner_scope/actions/runners/registration-token" | jq .token)
+        # Output the registration token and runner scope
+        echo "registration_token=$registration_token" >> $GITHUB_OUTPUT
+        echo "runner_scope=$runner_scope" >> $GITHUB_OUTPUT
       shell: bash
-      id: get-registration-token
+      id: get-registration
     - name: Create Device
       uses: equinix-labs/metal-device-action@main
       with:
@@ -64,6 +78,8 @@ runs:
           tar xzf ./actions-runner-linux-x64-${VERSION}.tar.gz -C runner
           chown -R ghrunner ./runner
           cd runner
-          sudo -E -u ghrunner ./config.sh --unattended --url https://github.com/${{ github.repository }} --token ${{ steps.get-registration-token.outputs.registration-token }} --name $(hostname) --work /home/ghrunner --labels ${{ github.repository }} --ephemeral
+          sudo -E -u ghrunner ./config.sh --unattended --url https://github.com/${{ steps.get-registration.outputs.runner_scope }} \
+            --token ${{ steps.get-registration.outputs.registration_token }} --name $(hostname) --work /home/ghrunner \
+            --labels ${{ steps.get-registration.outputs.runner_scope }} --ephemeral
           ./svc.sh install
           ./svc.sh start
