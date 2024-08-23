@@ -63,6 +63,9 @@ runs:
         provisioning_timeout: ${{ inputs.provisioning_timeout }}
         user_data: |
           #!/bin/bash
+          set -e  # Exit immediately if any command exits with a non-zero status
+
+          # Install necessary packages based on OS
           if command -v yum &> /dev/null; then
             yum install -y curl jq libicu gcc
           else
@@ -70,16 +73,24 @@ runs:
             apt-get -qy update
             apt-get -qy install build-essential gcc jq
           fi
+
+          # Create a user for runner
           useradd -m ghrunner -s /bin/bash
           cd /home/ghrunner
           mkdir runner
+
+          # Download and install GitHub actions runner
           VERSION=$(curl -fsSL https://api.github.com/repos/actions/runner/releases/latest | jq -r .tag_name | sed 's/^v//')
           curl -o actions-runner-linux-x64-${VERSION}.tar.gz -fsSL https://github.com/actions/runner/releases/download/v${VERSION}/actions-runner-linux-x64-${VERSION}.tar.gz
           tar xzf ./actions-runner-linux-x64-${VERSION}.tar.gz -C runner
           chown -R ghrunner ./runner
           cd runner
+
+          # Configure the runner
           sudo -E -u ghrunner ./config.sh --unattended --url https://github.com/${{ steps.get-registration.outputs.runner_scope }} \
             --token ${{ steps.get-registration.outputs.registration_token }} --name $(hostname) --work /home/ghrunner \
             --labels ${{ steps.get-registration.outputs.runner_scope }} --ephemeral
+
+          # Install and start the runner service
           ./svc.sh install
           ./svc.sh start
