@@ -28,17 +28,20 @@ inputs:
   repository_level:
     description: "Set to true to enable repository level registration token"
     default: "false"
+  organization:
+    description: "Name of the organization if github.organization is not available"
+    default: ""
 runs:
   using: "composite"
   steps:
     - run: |
         # Determine the level and runner scope based on inputs
-        if  [[ "${{ inputs.repository_level }}" == "true" ]] || [[ -z "${{ github.organization }}" ]]; then
+        if  [[ "${{ inputs.repository_level }}" == "true" ]]; then
           level="repos"
           runner_scope="${{ github.repository }}"
         else
           level="orgs"
-          runner_scope="${{ github.organization }}"
+          runner_scope="${{ inputs.organization }}"
         fi
         # Get the registration token
         registration_token=$(curl -fsSL \
