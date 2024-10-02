@@ -102,7 +102,7 @@ runs:
             CUSTOM_SCRIPT_EOF
             chmod 0700 $CUSTOM_SCRIPT
             echo "Running custom user script"
-            sudo $CUSTOM_SCRIPT
+            $CUSTOM_SCRIPT
           fi
 
           # Install and start the runner service
